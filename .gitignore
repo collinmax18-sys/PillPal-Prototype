@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+app/.expo/
+app/dist/
+app/web-build/
+app/ios/
+app/android/
+.claude/

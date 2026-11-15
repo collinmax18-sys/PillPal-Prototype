@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "PillPal",
+    "slug": "pillpal",
+    "version": "0.4.0",
+    "scheme": "pillpal",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ca.lakeheadu.comp4310.pillpal"
+    },
+    "android": {
+      "package": "ca.lakeheadu.comp4310.pillpal",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      ["expo-sqlite", { "useSQLCipher": true }],
+      "expo-secure-store",
+      ["expo-notifications", { "color": "#0B5FA5" }]
+    ]
+  }
+}

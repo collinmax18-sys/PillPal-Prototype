@@ -1,0 +1,17 @@
+Pair                               Ratio  Target  Result
+Body text on card                  16.46   4.5:1   PASS
+Body text on background            15.47   4.5:1   PASS
+Muted text on card                  7.27   4.5:1   PASS
+Muted text on background            6.84   4.5:1   PASS
+Primary button text                 6.57   4.5:1   PASS
+Primary link on card                6.57   4.5:1   PASS
+Taken badge                         5.66   4.5:1   PASS
+Taken button text                   6.53   4.5:1   PASS
+Skipped badge                       7.14   4.5:1   PASS
+Missed badge                        5.99   4.5:1   PASS
+Due badge                           5.59   4.5:1   PASS
+Upcoming badge                      6.41   4.5:1   PASS
+Warning text on warning panel       7.01   4.5:1   PASS
+Danger button text                  7.26   4.5:1   PASS
+
+All 14 pairs meet WCAG 2.1 AA (4.5:1).

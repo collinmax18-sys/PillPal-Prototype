@@ -1,0 +1,10 @@
+  console.log
+    E3 timings ms: median=24.0 max=63.0 over 3780 dose records
+
+      at Object.log (__tests__/repo.test.ts:147:13)
+
+Test Suites: 4 passed, 4 total
+Tests:       51 passed, 51 total
+Snapshots:   0 total
+Time:        18.066 s
+Ran all test suites.

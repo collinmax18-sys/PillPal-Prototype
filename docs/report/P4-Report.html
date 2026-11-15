@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>P4 – PillPal Prototype and Progress Evaluation</title>
+<style>
+  @page { size: Letter; margin: 0.8in 0.85in; }
+  body { font-family: "Calibri", "Segoe UI", Arial, sans-serif; font-size: 11pt; line-height: 1.38; color: #111; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; }
+  h2 { font-size: 13.5pt; margin: 16pt 0 5pt; border-bottom: 1.5px solid #0B5FA5; padding-bottom: 2pt; color: #0B3D6B; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 10pt 0 3pt; page-break-after: avoid; }
+  p { margin: 0 0 6pt; text-align: justify; }
+  ul { margin: 0 0 6pt 16pt; padding: 0; }
+  li { margin-bottom: 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; font-size: 9.5pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #9aa7b5; padding: 3pt 5pt; vertical-align: top; text-align: left; }
+  th { background: #E3EEF9; }
+  .done { color: #1D6B3A; font-weight: 700; }
+  .part { color: #8A3B00; font-weight: 700; }
+  .todo { color: #A4262C; font-weight: 700; }
+  .cover { text-align: center; page-break-after: always; padding-top: 1.6in; }
+  .cover h1 { font-size: 24pt; }
+  .cover .sub { font-size: 15pt; margin: 6pt 0 26pt; }
+  .cover p { text-align: center; margin: 3pt 0; font-size: 12pt; }
+  .figs { display: flex; gap: 6pt; justify-content: space-between; margin: 6pt 0 2pt; page-break-inside: avoid; }
+  .figs figure { margin: 0; width: 24%; text-align: center; }
+  .figs img { width: 100%; border: 1px solid #ccd3db; border-radius: 6px; }
+  figcaption { font-size: 8.5pt; color: #333; margin-top: 2pt; }
+  .caption { font-size: 9pt; color: #333; text-align: center; margin-bottom: 8pt; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; background: #F1F3F6; padding: 0 2pt; }
+  .refs p { text-align: left; font-size: 10pt; margin-bottom: 3pt; padding-left: 22pt; text-indent: -22pt; }
+  .pb { page-break-before: always; }
+  .small { font-size: 9.5pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <p>COMP 4310 – Web Health Informatics</p>
+  <h1>P4: Prototype Implementation and Progress Evaluation</h1>
+  <div class="sub">PillPal: A Medication Information and Reminder Mobile Application</div>
+  <p><b>Team Name:</b> PillPal</p>
+  <p><b>Team Members:</b></p>
+  {{TEAM}}
+  <p style="margin-top:18pt">Department of Computer Science, Lakehead University</p>
+  <p><b>Repository:</b> {{REPO_URL}}</p>
+  <p><b>Date:</b> November 2026</p>
+</div>
+
+<h2>A1. Prototype Overview and Implemented Functionality</h2>
+<p>PillPal is a working cross-platform mobile application (React Native with Expo SDK 58 and TypeScript) that runs entirely on the phone and talks directly to the public RxNorm and openFDA services. It implements the full Tier 1 workflow from P3 and most of Tier 2: <i>add medication → create schedule → receive reminder → record dose → review history → view medication information</i>. On top of that workflow it adds our main contribution, an <b>effects journal</b>. Users record how a medication makes them feel after taking it, and each reported effect is automatically compared against that medication's official FDA label. We deliberately removed the optional AI explanation component (FR8) so the team can focus on a reliable, well-tested core workflow (see A4).</p>
+
+<h3>Major implemented modules (mapped to P3 Figure 1)</h3>
+<ul>
+  <li><b>Medication Manager:</b> RxNorm (NLM RxNav) search with approximate matching for misspellings (e.g. "lipitr" → Lipitor). Saves the standardized name and RxCUI and parses strength/form. Manual entry is the offline fallback. Medications can be edited, stopped (keeping history) or deleted.</li>
+  <li><b>Reminder Engine:</b> schedules (multiple daily times, days of week, start/end dates) are expanded into dose instances with deterministic IDs. Local OS notifications with <i>Taken</i>/<i>Skip</i> action buttons are kept in a rolling window of 60 (under the iOS limit of 64) and rebuilt on every app open and data change, which mitigates P3 risk R2. Refill reminders are also scheduled.</li>
+  <li><b>Dose Log and History:</b> an append-only log keyed by dose ID (P3 risk R5). Doses are recorded from the app or the notification, automatically marked <i>Missed</i> after a configurable grace period, and can be corrected. Adherence is shown for 7/30/90 days with a daily stacked chart and per-medication bars.</li>
+  <li><b>Effects journal (requested addition):</b> after a dose is marked Taken, the app asks "How are you feeling?". Users record overall mood (1–5), when the note applies (right after, 30 min … 8 h), 18 side-effect and 4 positive-effect tags, severity, perceived effectiveness and free text. A <b>Label check</b> appears as effects are selected. It shows which effects the FDA label lists (with the source excerpt) and which are not listed. A severe effect triggers a "contact a professional / call 911" notice. The Journal tab summarizes average mood, trend, most frequent effects and a mood timeline.</li>
+  <li><b>Medication Info:</b> openFDA label lookup by RxCUI (falling back to related product RxCUIs and the generic name), cached locally for offline use and linked to DailyMed.</li>
+  <li><b>Roles and profiles:</b> Personal / Caregiver / Care-professional roles. A caregiver manages several people locally, and the Today screen shows each person's taken/missed/due counts.</li>
+  <li><b>Clinician summary:</b> a medication list with RxCUIs, adherence and recent journal notes, shared only through the OS share sheet. It supports the medication-reconciliation need identified in P1.</li>
+</ul>
+
+<div class="figs">
+  <figure><img src="../screenshots/01-today.jpg"><figcaption>(a) Today: record doses</figcaption></figure>
+  <figure><img src="../screenshots/05-label-check.jpg"><figcaption>(b) Journal entry with FDA label check</figcaption></figure>
+  <figure><img src="../screenshots/06-journal.jpg"><figcaption>(c) Effects journal</figcaption></figure>
+  <figure><img src="../screenshots/09-history.jpg"><figcaption>(d) 30-day adherence</figcaption></figure>
+</div>
+<p class="caption">Figure 1. Running prototype with synthetic demo data (more screenshots in <code>docs/screenshots/</code>).</p>
+
+<h3>Requirement status and evidence</h3>
+<table>
+<tr><th style="width:7%">Req.</th><th style="width:30%">Requirement (P3)</th><th style="width:13%">Status</th><th>Evidence</th></tr>
+<tr><td>FR1</td><td>Add, edit, remove medications</td><td class="done">Complete</td><td>RxNorm search + manual entry; edit/stop/delete; validation. Repository tests (add/edit/delete cascade, validation).</td></tr>
+<tr><td>FR2</td><td>Configurable reminder times</td><td class="done">Complete</td><td>Multiple times, days of week, date range. Tests: day filter, midnight crossing, DST, invalid input.</td></tr>
+<tr><td>FR3</td><td>Notification when a dose is due</td><td class="part">Implemented, not yet device-tested</td><td>Local notifications with Taken/Skip actions, cold-start handling, rolling window (test: 224 doses → 60 pending). E2 reliability run pending.</td></tr>
+<tr><td>FR4</td><td>Record Taken / Missed / Skipped</td><td class="done">Complete</td><td>From app or notification; auto-missed after grace; corrections. Tests: grace boundary, auto-missed written once, supply restored on correction.</td></tr>
+<tr><td>FR5</td><td>Medication history</td><td class="done">Complete</td><td>History tab grouped by day with source (app / reminder / auto). Screenshot (d).</td></tr>
+<tr><td>FR6</td><td>Adherence information</td><td class="done">Complete</td><td>7/30/90-day %, daily chart, per medication. Tests against hand-calculated values; reproducible 30-day seeded set.</td></tr>
+<tr><td>FR7</td><td>Trusted medication information</td><td class="done">Complete</td><td>openFDA label by RxCUI, offline cache, DailyMed link. Parser tests on saved real RxNav/openFDA responses.</td></tr>
+<tr><td>FR8</td><td>Optional plain-language explanation (AI)</td><td class="todo">Removed from scope</td><td>Dropped to keep the prototype focused on the core workflow (A4). The label is instead shown verbatim, organized into plainly titled sections.</td></tr>
+<tr><td>New</td><td>Notes after a dose: how it makes the user feel</td><td class="done">Complete</td><td>Journal entry, edit/delete, summaries, label matching. Tests verify matches on the real lisinopril label (cough, dizziness).</td></tr>
+<tr><td>NFR1/5</td><td>Usability / accessibility</td><td class="part">Partial</td><td>48 px touch targets, labelled controls, 16/16 colour pairs ≥ 4.5:1 (WCAG AA). Heuristic evaluation and screen-reader pass pending.</td></tr>
+<tr><td>NFR2</td><td>Reminders work closed/offline</td><td class="part">Designed, not yet measured</td><td>Local scheduling, no network needed; re-registered on app open.</td></tr>
+<tr><td>NFR3</td><td>Secure storage, minimal disclosure</td><td class="part">Partial</td><td>SQLCipher + Keystore/Keychain key in development builds (not in Expo Go). Only drug names / public IDs leave the device.</td></tr>
+<tr><td>NFR4</td><td>Screens respond within ~2 s</td><td class="done">Met in test</td><td>E3: 90-day history over 3,780 dose records loads in median 24 ms, max 63 ms (Node SQLite; on-device timing pending).</td></tr>
+<tr><td>Roles</td><td>Caregiver / professional (Sec. 3)</td><td class="part">Partial</td><td>Local multi-profile + role-based home. Firebase accounts, sync and invite links not started.</td></tr>
+</table>
+
+<h3>How this supports the P2 contribution</h3>
+<p>P2 concluded that reminders alone are not novel and that the gap is <i>simple medication management + trustworthy medication information + understandable presentation</i>. The prototype connects the three. Medications are identified with RxNorm, so the app can retrieve the correct official label. The label is presented clearly: the boxed warning comes first, each section has a plain title such as "How to take it" or "Side effects", long sections are collapsed, and the source and label version are always visible. The effects journal turns that label into something personal: when a user reports a dry cough after lisinopril, PillPal shows that cough is listed in the lisinopril label and quotes the excerpt. This makes the information relevant to the user's own experience without diagnosing anything. The clinician summary carries the same information to appointments.</p>
+
+<h2>A2. Repository and Implementation Evidence</h2>
+<p><b>Public repository:</b> {{REPO_URL}}</p>
+<p>The repository contains the complete source of the mobile app (<code>app/</code>), a README with project description, features, setup and run instructions, dependencies and configuration, and a privacy section listing exactly what is sent to each external service. No server or API keys are needed: the public RxNorm and openFDA APIs are called directly. Demo data is synthetic and loaded from inside the app (<i>Settings → Load synthetic demo data</i>). It uses real public RxCUIs so that drug information works live. Test fixtures are real public RxNav/openFDA responses. The repository also includes the test suite, a WCAG contrast check, saved test output (<code>docs/evidence/</code>), screenshots and the demo script. No credentials or patient information are committed.</p>
+<table class="small">
+<tr><th>Item</th><th>Technology / location</th></tr>
+<tr><td>Mobile app</td><td>React Native 0.88, Expo SDK 58, Expo Router, TypeScript; expo-sqlite (SQLCipher), expo-notifications, expo-secure-store</td></tr>
+<tr><td>Pure logic (unit tested)</td><td><code>app/src/core/</code>: schedule, adherence, refill, effects (label matching), drugdata (parsers), report</td></tr>
+<tr><td>Data layer</td><td><code>app/src/data/</code>: schema + migrations, repository (all SQL), seed data. The same SQL is tested through Node's <code>node:sqlite</code></td></tr>
+<tr><td>External data</td><td>RxNorm/RxNav (NLM), openFDA drug label API, DailyMed links</td></tr>
+</table>
+
+<h2>A3. Progress Evaluation</h2>
+<p>Against the P3 plan, all <b>Tier 1</b> tasks are implemented. Of <b>Tier 2</b>, dose recording from the notification, auto-missed, history and adherence are complete. Of <b>Tier 3</b>, the openFDA label view, refill reminders and role-based home screens are implemented ahead of schedule. Firebase sign-in, sync and caregiver invite links have not been started. We applied the P3 decision gate and moved them to the final-stretch plan below. The optional AI explainer was removed from scope.</p>
+<h3>Testing and preliminary results</h3>
+<table>
+<tr><th style="width:24%">Check (P3 eval.)</th><th style="width:40%">What was tested</th><th>Result</th></tr>
+<tr><td>E1 Functional (unit/integration)</td><td>51 Jest tests: scheduling (midnight crossing, DST, day filters, invalid input), grace period, auto-missed, adherence against hand-calculated values, refills, journal validation and summaries, label matching, RxNorm/openFDA parsing on real responses, repository SQL including cascades and schedule edits</td><td class="done">51 / 51 pass</td></tr>
+<tr><td>E3 Performance</td><td>3 synthetic profiles, 15 medications, 90 days (3,780 dose records); medication list + 90-day adherence loaded 10×</td><td class="done">median 24 ms, max 63 ms (target &lt; 2 s)</td></tr>
+<tr><td>E5 Lookup (preliminary)</td><td>Live RxNorm and openFDA lookups for 10 common medications (metformin, lisinopril, atorvastatin, sertraline, amlodipine, ibuprofen, levothyroxine, omeprazole, amoxicillin, acetaminophen) and for misspelled input</td><td>10/10 product RxCUIs returned a complete FDA label (after the fix below); "lipitr" resolved to Lipitor products</td></tr>
+<tr><td>E6c Accessibility (partial)</td><td>WCAG 2.1 contrast of all text/background pairs; labelled controls; 48 px targets</td><td class="done">16 / 16 pairs ≥ 4.5:1</td></tr>
+<tr><td>End-to-end walkthrough</td><td>Full workflow in the running app (web preview): search → add → mark taken → journal + label check → history → drug info → explanation → clinician summary</td><td class="done">Working. Found and fixed 4 defects (below)</td></tr>
+</table>
+<p>The tests and walkthrough found real defects, which were fixed and covered by regression tests. (1) A medication added in the evening immediately showed that morning's doses as <i>Missed</i>; doses whose grace period ended before the medication existed are now ignored. (2) Two dose records with the same timestamp could resolve in the wrong order; ties now keep insertion order. (3) RxNorm approximate matches lost the drug name when the same concept appeared in two vocabularies. (4) For atorvastatin, openFDA's first match was a repackager label with no clinical sections, so PillPal now requests up to five labels and uses the most complete one. The suites also confirmed E1 boundary cases from P3: a 23:30 dose is still "due" at 00:15, and a dose stays at 08:00 local time across the November DST change.</p>
+<p><b>Overall progress:</b> the core objectives from P1 (accurate entry, reminders and adherence tracking, trustworthy information, privacy-preserving storage) are implemented. Drug-interaction alerts and AI-generated explanations are out of scope. The remaining risk is in on-device validation (E2, E6) and the cloud features.</p>
+
+<h2>A4. Remaining Work, Challenges, and Updated Plan</h2>
+<h3>Technical challenges and limitations</h3>
+<ul>
+  <li><b>Encryption vs Expo Go (P3 R4 materialized).</b> SQLCipher requires a development build, so encryption is off in Expo Go, and the app states this in Settings. Plan: demonstrate and test E4 with a development build (<code>npx expo run:android</code>).</li>
+  <li><b>openFDA RxCUI coverage.</b> openFDA indexes product-level RxCUIs, so ingredient or brand concepts do not resolve directly. We added fallbacks to related RxNorm products and the generic name. Canadian-only brands may still be missing (P3 R3).</li>
+  <li><b>Reminder reliability</b> on Android 14 (exact-alarm permission) and after reboot is not yet measured; the rolling re-registration is in place.</li>
+  <li><b>Label matching is lexical.</b> It uses synonym lists over adverse-reaction and warning sections. It can miss paraphrases, and it reports co-occurrence in the label, never causation. The wording in the app reflects this.</li>
+</ul>
+<h3>Changes to requirements, design and scope</h3>
+<ul>
+  <li><b>Added:</b> the effects journal with on-device label matching, and the clinician summary. Both are extensions of the P3 "notes after a dose" design item.</li>
+  <li><b>Removed:</b> the optional AI plain-language explainer (FR8, and evaluation E7). P3 already made it optional and conditional. We built a working version, but the team decided it made the project too ambitious for the remaining time and pulled focus from the core workflow. Removing it also removes the need for a backend server and API keys and simplifies privacy: no data goes anywhere except the public drug databases. Understandable presentation is now handled by the plainly titled, collapsible label sections and by the journal's label check.</li>
+  <li><b>Changed:</b> the openFDA label view and refill reminders moved earlier (from Tier 3) because they support the core workflow and the journal.</li>
+  <li><b>Deferred:</b> Firebase authentication, Firestore sync, invite-code linking and Cloud Function missed-dose alerts. Following the P3 decision gate, these are now a stretch goal. Caregivers are supported with local profiles on one device.</li>
+</ul>
+<h3>Updated plan to the final submission</h3>
+<table>
+<tr><th style="width:18%">Week</th><th>Tasks</th><th style="width:30%">Exit criterion</th></tr>
+<tr><td>Nov 16–22 (P4 demo)</td><td>Development build with SQLCipher on Android; E4 database-file check; start E2 on one Android phone; E5 lookup test on the full 30-drug list (incl. Canadian brands)</td><td>Demo delivered; DB unreadable without key; E5 table produced</td></tr>
+<tr><td>Nov 23–29 (feature freeze 29th)</td><td>E2 full run (open / background / swiped / airplane / reboot); heuristic evaluation (each member reviews screens they did not build); TalkBack/VoiceOver + largest-font pass; fix severity 3–4 issues; Firebase sign-in + Firestore sync only if all of the above pass</td><td>≥ 95% reminders within 60 s; no unlabeled controls</td></tr>
+<tr><td>Nov 30–Dec 4</td><td>E3 timing on a mid-range phone; final traceability matrix; report, tagged release and final demo</td><td>All Tier 1–2 tests pass; final submission</td></tr>
+</table>
+<p>The most important remaining challenge is <b>evidence on real devices</b>. We will address it first, in the week of the demo, because reminders that do not fire would undermine the whole workflow. The time freed by removing the AI component goes to device testing (E2), accessibility and usability work (E6), and, only if those pass, the Firebase features.</p>
+
+<div class="refs">
+<h2>References</h2>
+<p>[1] U.S. National Library of Medicine, "RxNorm API / RxNav," accessed Nov. 2026.</p>
+<p>[2] U.S. Food and Drug Administration, "openFDA Drug Labeling API," accessed Nov. 2026.</p>
+<p>[3] U.S. National Library of Medicine, "DailyMed," accessed Nov. 2026.</p>
+<p>[4] Expo, "SQLite (expo-sqlite)" and "Notifications (expo-notifications)," Expo SDK 58 documentation, accessed Nov. 2026.</p>
+<p>[5] W3C, "Understanding SC 1.4.3: Contrast (Minimum)," WCAG 2.1, accessed Nov. 2026.</p>
+<p>[6] J. Nielsen, "10 Usability Heuristics for User Interface Design," Nielsen Norman Group, 1994.</p>
+</div>
+
+</body>
+</html>
